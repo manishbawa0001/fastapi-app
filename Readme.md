@@ -47,7 +47,7 @@ The final, tested application image is already publicly available on Docker Hub 
 
 ### 2. If You Need to Build Your Own Image
 
-If you modify the application code, you must rebuild and push the container image.
+If you modify the application code or want to push it to your own registry, you must rebuild and push the container image.
 
 * **Crucial Note (Platform Compatibility):** AWS EKS worker nodes use the **AMD64** architecture. If you are building on a Mac with an M1/M2/M3 chip, you **must** specify the target platform using `docker buildx`.
 
@@ -56,67 +56,12 @@ If you modify the application code, you must rebuild and push the container imag
 ```bash
 docker buildx build \
     --platform linux/amd64 \
-    -t manidocker1248/particle41-app:latest \
+    -t <YOUR_DOCKERHUB_USERNAME>/<YOUR_REPO_NAME>:latest \
     --push ./app
-🚀 Project Phase III: Deployment and Management
-This phase outlines the prerequisites, the deployment commands, and the verification steps.
-
-1. Prerequisites and Setup
-Ensure you have the following tools installed and your AWS environment configured:
-
-AWS CLI, Terraform, and Docker are installed.
-
-AWS Credentials Configured:
-
-Bash
-
-aws configure
-2. Deployment Process
-The deployment requires only two Terraform steps executed from the terraform/ directory.
-
-Initialize and Review Plan (Recommended best practice):
-
-Bash
-
-cd terraform/
+🚀 Project Phase III: Deployment and ManagementThis phase outlines the prerequisites, the deployment commands, and the verification steps.1. Prerequisites and SetupEnsure you have the following tools installed and your AWS environment configured:AWS CLI, Terraform, and Docker are installed.AWS Credentials Configured:Bashaws configure
+2. Configuration Check (Mandatory)If you pushed your own image in Phase II, you MUST update the following files with your new repository name before running terraform apply.FileVariable to ChangeExample of Changeterraform/terraform.tfvarsapp_image_path"myusername/my-fastapi-app:latest"helm/fastapi-app/values.yamlrepository and tagrepository: myusername/my-fastapi-app3. Deployment ProcessThe deployment requires only two Terraform steps executed from the terraform/ directory.Initialize and Review Plan (Recommended best practice):Bashcd terraform/
 terraform init      # Downloads necessary modules and providers
 terraform plan      # Shows exactly what will be created
-Execute Deployment (Provisions all resources): This command creates the VPC, EKS cluster, and deploys the application.
-
-(This process takes approximately 15-25 minutes.)
-
-Bash
-
-terraform apply --auto-approve
-3. Verification
-Once terraform apply finishes, the final output will provide the public address for your application.
-
-Retrieve Application URL: Look for the application_url output value.
-
-Access the Service: Open the URL in your web browser.
-
-4. Cleanup (Mandatory)
-To prevent incurring unnecessary AWS costs, you must destroy all resources immediately after verification.
-
-Run the Destroy Command (from the terraform/ directory):
-
-Bash
-
-terraform destroy --auto-approve
-🌟 Additional Context: Production Readiness
-This is a simple service built to serve the project demonstration purpose. For a professional, production-recommended solution, several essential features would be implemented:
-
-Resource Management: Adding Kubernetes limits and requests to the Deployment for stable scheduling.
-
-Advanced Scheduling: Using node selectors or pod affinities to schedule deployments on specific nodes based on workload.
-
-CI/CD Pipeline Integration:
-
-Implementing a pipeline on pull requests to run code checks (e.g., SonarQube).
-
-Running image vulnerability scans (e.g., Trivy) before pushing to the container registry.
-
-Terraform State Security: Configuring a remote backend using S3 for state storage and DynamoDB for state locking to prevent conflicts during concurrent operations.
-
-💡 Note on Generative AI
-I utilized generative AI to structure the project code and documentation, prioritizing efficiency and speed. However, every component—including the non-root Docker user, the Helm-via-Terraform dependency management, the platform-specific Docker fix, and the explicit EKS networking configuration—was implemented based on my own technical knowledge and understanding of AWS and Kubernetes best practices.
+Execute Deployment (Provisions all resources):This command creates the VPC, EKS cluster, and deploys the application.(This process takes approximately 15-25 minutes.)Bashterraform apply --auto-approve
+4. VerificationOnce terraform apply finishes, the final output will provide the public address for your application.Retrieve Application URL: Look for the application_url output value.Access the Service: Open the URL in your web browser.5. Cleanup (Mandatory)To prevent incurring unnecessary AWS costs, you must destroy all resources immediately after verification.Run the Destroy Command (from the terraform/ directory):Bashterraform destroy --auto-approve
+🌟 Additional Context: Production ReadinessThis is a simple service built to serve the project demonstration purpose. For a professional, production-recommended solution, several essential features would be implemented:Resource Management: Adding Kubernetes limits and requests to the Deployment for stable scheduling.Advanced Scheduling: Using node selectors or pod affinities to schedule deployments on specific nodes based on workload.CI/CD Pipeline Integration:Implementing a pipeline on pull requests to run code checks (e.g., SonarQube).Running image vulnerability scans (e.g., Trivy) before pushing to the container registry.Terraform State Security: Configuring a remote backend using S3 for state storage and DynamoDB for state locking to prevent conflicts during concurrent operations.💡 Note on Generative AII utilized generative AI to structure the project code and documentation, prioritizing efficiency and speed. However, every component—including the non-root Docker user, the Helm-via-Terraform dependency management, the platform-specific Docker fix, and the explicit EKS networking configuration—was implemented based on my own technical knowledge and understanding of AWS and Kubernetes best practices.
