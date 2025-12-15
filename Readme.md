@@ -45,7 +45,7 @@ Ensure you have the following tools installed and your AWS credentials configure
 | **Docker** | [Docker Installation Guide](https://docs.docker.com/get-docker/) |
 
 **AWS Credentials:**
-```bash
+
 aws configure
 📦 Container Image Management
 The application image is hosted on Docker Hub.
@@ -54,13 +54,12 @@ Public Repository: manidocker1248/particle41-app:latest
 
 Pull Command (Reference):
 
-Bash
 
 docker pull manidocker1248/particle41-app:latest
 Building Your Own Image (Mandatory Fix for M-series Macs)
 If you are using an Apple Silicon (M1/M2/M3) Mac, you must build the image specifically for the linux/amd64 architecture used by the AWS EKS worker nodes to avoid deployment errors.
 
-Bash
+
 
 # Run this from the project root directory
 docker buildx build \
@@ -75,12 +74,12 @@ File	Variable to Change	Example of Change
 terraform/terraform.tfvars	app_image_path	"myusername/my-fastapi-app:latest"
 helm/fastapi-app/values.yaml	repository and tag	repository: myusername/my-fastapi-app
 
-Export to Sheets
+
 
 2. Terraform Deployment
 Navigate to the terraform/ directory to begin.
 
-Bash
+
 
 cd terraform/
 Step	Command	Purpose
@@ -88,7 +87,7 @@ Initialize	terraform init	Downloads providers and sets up the project.
 Plan (Review)	terraform plan	Shows all infrastructure changes before applying them (Best Practice).
 Apply (Deploy)	terraform apply --auto-approve	Creates the VPC, EKS Cluster, and installs the application via Helm.
 
-Export to Sheets
+
 
 ✅ Phase III: Verification and Cleanup
 1. Verification
@@ -101,7 +100,7 @@ Test: Access the URL in a browser to see the JSON response (timestamp and IP).
 2. Cleanup (Crucial)
 To avoid recurring AWS charges, destroy all provisioned infrastructure immediately after verification.
 
-Bash
+
 
 terraform destroy --auto-approve
 🌟 Additional Context: Production Strategy
