@@ -178,7 +178,7 @@ terraform destroy --auto-approve
 For a production setup, you would typically add:
 
 - **Remote Terraform state**: S3 backend + DynamoDB lock table.
-- **CI/CD**: Pipelines for tests, security scans (e.g., Trivy), and controlled deployments to EKS.
+- **CI/CD**: Here in this project docker image has been built and pushed manually to the contianer repository. But i usually use cicd in production to check the code with sonarqube before it get merged to main and then to build the image  and then  test the image with trivyscan before pushing and then pushing and deploying the image on eks. 
 - **Kubernetes hardening**: Resource limits/requests, non‑root containers, network policies, and node selectors/taints where appropriate.
 
 *Generative AI was used to help structure documentation, but the technical design (networking, image build strategy, EKS setup) was validated manually.* 
