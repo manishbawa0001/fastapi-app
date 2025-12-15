@@ -1,6 +1,0 @@
-# helm/fastapi-app/values.yaml
-replicaCount: 2
-
-image:
-  repository: docker.io/manidocker1248/particle41-app
-  tag: latest
