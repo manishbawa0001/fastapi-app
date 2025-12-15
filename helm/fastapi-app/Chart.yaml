@@ -1,0 +1,6 @@
+# helm/fastapi-app/Chart.yaml
+apiVersion: v2
+name: fastapi-app
+description: A Helm chart for deploying the SimpleTimeService FastAPI app to EKS.
+version: 0.1.0
+appVersion: "1.0.0"

@@ -1,0 +1,16 @@
+# helm/fastapi-app/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+  annotations:
+    # Use Network Load Balancer (NLB) for better performance
+    "service.beta.kubernetes.io/aws-load-balancer-type": "nlb" 
+spec:
+  type: LoadBalancer
+  selector:
+    app: fastapi-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
