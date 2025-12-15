@@ -83,7 +83,7 @@ docker pull manidocker1248/particle41-app:latest
 
 ### Apple Silicon (M1/M2/M3) users – build `linux/amd64`
 
-EKS worker nodes are `linux/amd64`. On Apple Silicon you **must** build and push an `amd64` image:
+Kubernetes worker nodes on EKS are `linux/amd64` by default (unless you explicitly use ARM/Graviton node groups), so on Apple Silicon you **must** build and push an `amd64` image:
 
 ```bash
 # From project root
