@@ -1,116 +1,184 @@
-# 🌐 Project: SimpleTimeService EKS Deployment
+## 🌐 SimpleTimeService on AWS EKS
 
-## 🎯 Project Overview and Goals
+**SimpleTimeService** is a small FastAPI service that returns the current UTC timestamp and the client's IP address.  
+This repo shows an end-to-end, cloud‑native deployment to **AWS EKS** using **Terraform** and **Helm**.
 
-The **SimpleTimeService** is a minimal microservice built with FastAPI that returns the current UTC timestamp and the client's public IP address.
+### 🏛️ Architecture
 
-This project serves as a comprehensive demonstration of cloud-native deployment skills, covering:
-* Secure Containerization
-* End-to-end Infrastructure-as-Code (Terraform)
-* Managed Kubernetes Deployment (AWS EKS & Helm)
+The Terraform code provisions networking and a Kubernetes cluster, then deploys the containerized app via Helm:
 
-### 🏛️ Architecture and Key Components
+| **Component**           | **Tool / Service**     | **Purpose**                                                        |
+|-------------------------|------------------------|--------------------------------------------------------------------|
+| IaC orchestration       | Terraform              | Provisions all AWS resources and installs the app via Helm        |
+| Cloud network           | AWS VPC                | Private subnets, NAT gateway, secure networking                    |
+| Kubernetes control plane| AWS EKS                | Managed Kubernetes cluster                                         |
+| App packaging           | Helm                   | Defines Deployment, Service, and related Kubernetes resources      |
+| External access         | AWS Network LB (NLB)   | Public endpoint for the FastAPI service                            |
 
-The solution provisions a secure VPC and deploys the containerized application onto AWS EKS.
-
-| Component | Tool / Service | Purpose |
-| :--- | :--- | :--- |
-| **IaC Orchestration** | **Terraform** | Manages all cloud resources and orchestrates the application installation. |
-| **Cloud Network** | **AWS VPC** | Provides secure networking (private subnets for workers, NAT for outbound internet). |
-| **Container Orchestration**| **AWS EKS** (Kubernetes) | Managed control plane hosting the application. |
-| **Application Packaging**| **Helm** | Standard packaging for deploying the Kubernetes manifests (Deployment/Service). |
-| **Service Access** | **AWS Network Load Balancer (NLB)** | Automatically provisions a public endpoint for the application. |
-
-
-
-### 💡 Deployment Workflow Explained
-
-The entire process is automated via a single `terraform apply` command, which executes two main phases:
-
-1.  **Infrastructure Creation:** Terraform provisions the VPC, creates the EKS cluster, and launches the necessary worker nodes.
-2.  **Application Installation:** Terraform then uses the **Helm Provider** to connect to the new EKS cluster and install the application, which, in turn, provisions the final **AWS Network Load Balancer (NLB)**.
+The `terraform` code is configured by default for **region `us-east-1`** and image path defined in `terraform.tfvars`.
 
 ---
 
-## 🛠️ Phase I: Setup and Preparation
+## 💻 Running the app locally (optional)
 
-### ⚠️ Prerequisites
+From the project root:
 
-Ensure you have the following tools installed and your AWS credentials configured:
+```bash
+cd app
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
 
-| Tool | Installation Guide |
-| :--- | :--- |
-| **AWS CLI** | [AWS CLI Installation Guide](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) |
-| **Terraform** | [Terraform Installation Guide](https://learn.hashicorp.com/tutorials/terraform/install-cli) |
-| **Docker** | [Docker Installation Guide](https://docs.docker.com/get-docker/) |
+Call the service:
 
-**AWS Credentials:**
+```bash
+curl http://localhost:8000/
+```
 
+You should see a JSON response similar to:
+
+```json
+{
+  "timestamp": "2025-01-01T12:00:00+00:00",
+  "ip": "127.0.0.1"
+}
+```
+
+Health endpoints:
+
+- `GET /health` – liveness
+- `GET /ready` – readiness
+
+---
+
+## 🛠️ Phase I – Prerequisites
+
+Install and configure:
+
+| **Tool**   | **Guide** |
+|-----------|-----------|
+| AWS CLI   | [AWS CLI install](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) |
+| Terraform | [Terraform install](https://learn.hashicorp.com/tutorials/terraform/install-cli)        |
+| Docker    | [Docker install](https://docs.docker.com/get-docker/)                                  |
+
+Configure AWS credentials (must be able to create VPC, EKS, IAM, NLB, etc.):
+
+```bash
 aws configure
-📦 Container Image Management
-The application image is hosted on Docker Hub.
+```
 
-Public Repository: manidocker1248/particle41-app:latest
+---
 
-Pull Command (Reference):
+## 📦 Container image
 
+**Default image (already configured):**
 
+- `docker.io/manidocker1248/particle41-app:latest`
+
+Pull for reference:
+
+```bash
 docker pull manidocker1248/particle41-app:latest
-Building Your Own Image (Mandatory Fix for M-series Macs)
-If you are using an Apple Silicon (M1/M2/M3) Mac, you must build the image specifically for the linux/amd64 architecture used by the AWS EKS worker nodes to avoid deployment errors.
+```
 
+### Apple Silicon (M1/M2/M3) users – build `linux/amd64`
 
+EKS worker nodes are `linux/amd64`. On Apple Silicon you **must** build and push an `amd64` image:
 
-# Run this from the project root directory
+```bash
+# From project root
 docker buildx build \
-    --platform linux/amd64 \
-    -t <YOUR_DOCKERHUB_USERNAME>/<YOUR_REPO_NAME>:latest \
-    --push ./app
-⚙️ Phase II: Configuration and Deployment
-1. Mandatory Configuration Check
-If you built and pushed your own image (or used a different tag), you MUST update these two files to point to your repository before deployment:
+  --platform linux/amd64 \
+  -t <YOUR_DOCKERHUB_USERNAME>/<YOUR_REPO_NAME>:latest \
+  --push ./app
+```
 
-File	Variable to Change	Example of Change
-terraform/terraform.tfvars	app_image_path	"myusername/my-fastapi-app:latest"
-helm/fastapi-app/values.yaml	repository and tag	repository: myusername/my-fastapi-app
+Then update the image references as shown below.
 
+---
 
+## ⚙️ Phase II – Configure and deploy
 
-2. Terraform Deployment
-Navigate to the terraform/ directory to begin.
+### 1️⃣ Update configuration (if using your own image)
 
+If you built and pushed your own image or tag, update:
 
+| **File**                      | **Field(s) to change** | **Example**                                      |
+|-------------------------------|------------------------|--------------------------------------------------|
+| `terraform/terraform.tfvars`  | `app_image_path`       | `"myusername/my-fastapi-app:latest"`             |
+| `helm/fastapi-app/values.yaml`| `repository`, `tag`    | `repository: myusername/my-fastapi-app`          |
 
-cd terraform/
-Step	Command	Purpose
-Initialize	terraform init	Downloads providers and sets up the project.
-Plan (Review)	terraform plan	Shows all infrastructure changes before applying them (Best Practice).
-Apply (Deploy)	terraform apply --auto-approve	Creates the VPC, EKS Cluster, and installs the application via Helm.
+You can also adjust other values in `terraform.tfvars` such as `aws_region`, `project_name`, `vpc_cidr`.
 
+### 2️⃣ Deploy with Terraform
 
+From the project root:
 
-✅ Phase III: Verification and Cleanup
-1. Verification
-The deployment is complete when terraform apply finishes.
+```bash
+cd terraform
 
-Retrieve URL: Check the Terraform output for the application_url.
+# Initialize providers and modules
+terraform init
 
-Test: Access the URL in a browser to see the JSON response (timestamp and IP).
+# Review planned changes (recommended)
+terraform plan
 
-2. Cleanup (Crucial)
-To avoid recurring AWS charges, destroy all provisioned infrastructure immediately after verification.
+# Create VPC, EKS, and install the app via Helm
+terraform apply --auto-approve
+```
 
+Terraform will:
 
+- Create the VPC, subnets, security groups, and EKS cluster
+- Provision worker nodes
+- Use the Helm provider to install the `fastapi-app` chart
+- Expose the service via an AWS Network Load Balancer
 
+---
+
+## ✅ Phase III – Verify and clean up
+
+### Verify
+
+After `terraform apply` completes:
+
+1. Check the Terraform output for `application_url`.
+2. Open the URL in a browser or use `curl` to confirm the JSON response (`timestamp` + `ip`).
+
+### Clean up (important)
+
+To avoid ongoing AWS charges, destroy all resources when done:
+
+```bash
+cd terraform
 terraform destroy --auto-approve
-🌟 Additional Context: Production Strategy
-This is a simple service built to satisfy core deployment requirements. For a production-ready environment, our strategy would include:
+```
 
-State Management: Utilizing S3 for remote Terraform state storage and DynamoDB for state locking to ensure concurrency control.
+---
 
-CI/CD Pipeline: Implementing automated pipelines for code quality (SonarQube), image vulnerability scanning (Trivy), and controlled deployments to EKS.
+## 🧩 Troubleshooting (quick tips)
 
-Kubernetes Hardening: Defining mandatory limits and requests for containers and using node selectors for advanced scheduling.
+- **No response / 5xx from URL**  
+  - Check Kubernetes objects (after configuring `kubectl` for the EKS cluster):  
+    ```bash
+    kubectl get pods,svc
+    ```
+  - Ensure the service is of type `LoadBalancer` and pods are `Running`.
 
-💡 Note on Generative AI
-I used generative AI as an efficiency tool to structure and refine this documentation and the project components. The technical correctness, best practices (like non-root users, EKS networking, and the platform-specific build fix), and configuration flow were based on my own technical expertise and verification.
+- **Apple Silicon image / architecture errors**  
+  - Verify your image is built with `--platform linux/amd64` and that `terraform.tfvars` and Helm values point to that image.
+
+- **Terraform permission or region issues**  
+  - Confirm `aws_region` in `terraform/terraform.tfvars` matches your target region and that your AWS user/role has permissions for VPC, EKS, IAM, and ELB.
+
+---
+
+## 🌟 Production‑readiness notes
+
+For a production setup, you would typically add:
+
+- **Remote Terraform state**: S3 backend + DynamoDB lock table.
+- **CI/CD**: Pipelines for tests, security scans (e.g., Trivy), and controlled deployments to EKS.
+- **Kubernetes hardening**: Resource limits/requests, non‑root containers, network policies, and node selectors/taints where appropriate.
+
+*Generative AI was used to help structure documentation, but the technical design (networking, image build strategy, EKS setup) was validated manually.* 
